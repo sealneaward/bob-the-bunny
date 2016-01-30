@@ -35,6 +35,7 @@ local bunny
 local modifiers
 local house
 local carrots
+local carrot_counter = 0
 
 local game_timer = 1.0
 local animation_frame = 1 -- or 2
@@ -43,11 +44,13 @@ local paused = false
 
 local images = {}
 local songs = {}
+local fonts = {}
 
 local grabbed_modifier
 
 function setLevel(level)
   current_level = level
+  carrot_counter = 0
 
   if level == 0 then
     love.audio.stop()
@@ -150,6 +153,9 @@ function love.load()
 
   -- Play the title theme
   love.audio.play(songs.title)
+
+  -- Load fonts
+  fonts.label_32 = love.graphics.newFont('Assets/VCR_OSD_MONO_1.001.ttf', 32)
 end
 
 function love.keypressed(key)
@@ -280,6 +286,13 @@ function love.update(dt)
       bunny.row = bunny.row + 1
     end
 
+    for i, carrot in ipairs(carrots) do
+      if bunny.row == carrot.row and bunny.track == carrot.track then
+        carrot_counter = carrot_counter + 1
+        break
+      end
+    end
+
     if bunny.row == house.row and bunny.track == house.track then
       setLevel(current_level + 1)
     end
@@ -330,6 +343,11 @@ function love.draw()
     else
       love.graphics.draw(images.bunny_2, x, y, 0, SCALE, SCALE)
     end
+
+    -- Draw carrot counter
+    love.graphics.draw(images.carrot_icon, 468, 2, 0, 1, 1)
+    love.graphics.setFont(fonts.label_32)
+    love.graphics.print(':' .. carrot_counter, 500, 2)
 
     -- Draw grabbed modifier
     if grabbed_modifier then
