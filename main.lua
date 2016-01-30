@@ -7,7 +7,8 @@ local levels = {
       {type = 'right', track = 2, row = 2},
       {type = 'down', track = 2, row = 5}
     },
-    carrots = {}
+    carrots = {},
+    required_carrots = 0
   },
   {
     start_position = {track = 1, row = 1},
@@ -20,7 +21,23 @@ local levels = {
     },
     carrots = {
       {track = 2, row = 4}
-    }
+    },
+    required_carrots = 0
+  },
+  {
+    start_position = {track = 1, row = 1},
+    end_position = {track = 2, row = 4},
+    modifiers = {
+      {type = 'portal', track = 1, row = 7},
+      {type = 'left', track = 2, row = 8},
+      {type = 'portal', track = 2, row = 1},
+      {type = 'right', track = 3, row = 1},
+      {type = 'down', track = 3, row = 5}
+    },
+    carrots = {
+      {track = 3, row = 3}
+    },
+    required_carrots = 3
   }
 }
 
@@ -36,8 +53,10 @@ local modifiers
 local house
 local carrots
 local carrot_counter = 0
+local required_carrots
 
 local game_timer = 1.0
+local animation_timer = 0.5
 local animation_frame = 1 -- or 2
 
 local paused = false
@@ -48,27 +67,29 @@ local fonts = {}
 
 local grabbed_modifier
 
-function setLevel(level)
-  current_level = level
+function setLevel(level_id)
+  current_level = level_id
   carrot_counter = 0
 
-  if level == 0 then
+  if level_id == 0 then
     love.audio.stop()
     love.audio.rewind(songs.title)
     love.audio.play(songs.title)
     return
-  elseif level == 1 then
+  elseif level_id == 1 then
     love.audio.stop()
     love.audio.rewind(songs.level)
     love.audio.play(songs.level)
-  elseif level > #levels then
+  elseif level_id > #levels then
     return
   end
 
-  bunny = levels[level].start_position
-  house = levels[level].end_position
-  modifiers = levels[level].modifiers
-  carrots = levels[level].carrots
+  local level = levels[level_id]
+  bunny = level.start_position
+  house = level.end_position
+  modifiers = level.modifiers
+  carrots = level.carrots
+  required_carrots = level.required_carrots
 
   -- If there's two portals, link them
   local first_portal
@@ -135,6 +156,7 @@ function love.load()
   images.bunny_2:setFilter('nearest')
   images.house:setFilter('nearest')
   images.background:setFilter('nearest')
+  images.carrot_pickup:setFilter('nearest')
 
   images.modifiers = {}
   images.modifiers.down = love.graphics.newImage('Assets/down.png')
@@ -160,7 +182,7 @@ end
 
 function love.keypressed(key)
   if key == 'return' and current_level == 0 then
-    setLevel(1)
+    setLevel(3)
   end
 end
 
@@ -242,15 +264,20 @@ function love.update(dt)
     return
   end
 
-  game_timer = game_timer - dt
-  if game_timer < 0 then
-    game_timer = 1
+  animation_timer = animation_timer - dt
+  if animation_timer < 0 then
+    animation_timer = 0.5
     -- Update the two-frame animation.
     if animation_frame == 1 then
       animation_frame = 2
     else
       animation_frame = 1
     end
+  end
+
+  game_timer = game_timer - dt
+  if game_timer < 0 then
+    game_timer = 1
 
     -- Check if Bob was on a modifier
     local on_modifier = false
@@ -294,7 +321,12 @@ function love.update(dt)
     end
 
     if bunny.row == house.row and bunny.track == house.track then
-      setLevel(current_level + 1)
+      if carrot_counter < required_carrots then
+        bunny.row = 1
+        bunny.track = 1
+      else
+        setLevel(current_level + 1)
+      end
     end
 
     if bunny.row > ROWS then
@@ -319,7 +351,17 @@ function love.draw()
     -- Draw house
     x = trackToX(house.track)
     y = rowToY(house.row)
-    love.graphics.draw(images.house, x, y, 0, SCALE, SCALE)
+    if required_carrots > carrot_counter then
+      love.graphics.setColor(255, 255, 255, 128)
+      love.graphics.draw(images.house, x, y, 0, SCALE, SCALE)
+
+      love.graphics.setColor(255, 255, 255)
+      love.graphics.setFont(fonts.label_32)
+      love.graphics.print(required_carrots, x + 8, y - 8)
+      love.graphics.draw(images.carrot_icon, x + 24, y - 8)
+    else
+      love.graphics.draw(images.house, x, y, 0, SCALE, SCALE)
+    end
 
     -- Draw modifiers
     for i, modifier in ipairs(modifiers) do
@@ -345,7 +387,7 @@ function love.draw()
     end
 
     -- Draw carrot counter
-    love.graphics.draw(images.carrot_icon, 468, 2, 0, 1, 1)
+    love.graphics.draw(images.carrot_icon, 468, 2)
     love.graphics.setFont(fonts.label_32)
     love.graphics.print(':' .. carrot_counter, 500, 2)
 
