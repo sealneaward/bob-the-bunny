@@ -368,7 +368,7 @@ function love.draw()
   if current_level == 0 then
     -- Title screen
     love.graphics.draw(images.title, 20, 140, 0, 0.75, 0.75)
-    love.graphics.draw(images.enter_prompt, 160, 450, 0, 0.5, 0.5)
+    love.graphics.draw(images.enter_prompt, 160, 360, 0, 0.5, 0.5)
   elseif current_level <= #levels then
     -- Main game
     local x, y
