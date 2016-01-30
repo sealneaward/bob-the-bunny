@@ -60,6 +60,8 @@ local animation_timer = 0.5
 local animation_frame = 1 -- or 2
 
 local paused = false
+local seen_overlay = false
+local overlay
 
 local images = {}
 local songs = {}
@@ -90,6 +92,8 @@ function setLevel(level_id)
   modifiers = level.modifiers
   carrots = level.carrots
   required_carrots = level.required_carrots
+  overlay = images.overlays[level_id]
+  seen_overlay = false
 
   -- If there's two portals, link them
   local first_portal
@@ -169,6 +173,12 @@ function love.load()
     image:setFilter('nearest')
   end
 
+  images.overlays = {
+    love.graphics.newImage('Assets/Overlays/overlay_1.png'),
+    love.graphics.newImage('Assets/Overlays/overlay_2.png'),
+    love.graphics.newImage('Assets/Overlays/overlay_3.png')
+  }
+
   -- Load songs
   songs.title = love.audio.newSource('Assets/Jumpshot.mp3')
   songs.level = love.audio.newSource('Assets/Chibi Ninja.mp3')
@@ -182,7 +192,11 @@ end
 
 function love.keypressed(key)
   if key == 'return' and current_level == 0 then
-    setLevel(3)
+    setLevel(1)
+    return
+  end
+  if key == 'return' and not seen_overlay then
+    seen_overlay = true
   end
 end
 
@@ -260,7 +274,7 @@ function love.update(dt)
     return
   end
 
-  if grabbed_modifier then
+  if grabbed_modifier or not seen_overlay then
     return
   end
 
@@ -398,6 +412,11 @@ function love.draw()
       love.graphics.setColor(255, 255, 255, 128)
       love.graphics.draw(images.modifiers[grabbed_modifier.type], x, y, 0, SCALE, SCALE)
       love.graphics.setColor(255, 255, 255, 255)
+    end
+
+    -- Draw overlay
+    if not seen_overlay then
+      love.graphics.draw(overlay)
     end
   else
     -- Player won the game.
