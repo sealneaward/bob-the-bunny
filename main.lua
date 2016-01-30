@@ -191,17 +191,28 @@ function love.load()
 end
 
 function love.keypressed(key)
-  if key == 'return' and current_level == 0 then
-    setLevel(1)
+  if key ~= 'return' then
     return
   end
-  if key == 'return' and not seen_overlay then
+
+  if current_level == 0 then
+    setLevel(1)
+  elseif not seen_overlay then
     seen_overlay = true
   end
 end
 
 function love.mousepressed(x, y, button)
-  if current_level == 0 or current_level > #levels or button ~= 'l' then
+  if button ~= 'l' then
+    return
+  end
+
+  if current_level == 0 or current_level > #levels then
+    return
+  end
+
+  if not seen_overlay then
+    seen_overlay = true
     return
   end
 
@@ -416,6 +427,9 @@ function love.draw()
 
     -- Draw overlay
     if not seen_overlay then
+      love.graphics.setColor(0, 0, 0, 192)
+      love.graphics.rectangle("fill", 0, 0, 576, 640)
+      love.graphics.setColor(255, 255, 255)
       love.graphics.draw(overlay)
     end
   else
